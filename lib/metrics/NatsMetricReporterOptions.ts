@@ -22,10 +22,10 @@ export interface NatsMetricReporterOptions extends ScheduledMetricReporterOption
   log: Logger;
 
   /**
-   * Used to build the Nats message for a metric.
+   * Used to build the data for a given metric.
    * @type {NatsDataExtractor}
    */
-  metricMessageBuilder: NatsDataExtractor;
+  dataExtractor: NatsDataExtractor;
 
   /**
    * Used to determine the subject for a given metric.

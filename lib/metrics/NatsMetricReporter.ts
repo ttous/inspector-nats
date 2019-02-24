@@ -38,13 +38,13 @@ import { NatsSubjectDeterminator } from "./NatsSubjectDeterminator";
 
 export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReporterOptions, NatsReportingResult> {
   /**
-   * Returns a {@link MetricMessageBuilder} that builds an Nats.Message for a metric.
+   * Returns a {@link NatsDataExtractor} that builds an Nats.Message for a metric.
    *
    * @static
    * @returns {NatsDataExtractor}
    * @memberof NatsMetricReporter
    */
-  public static defaultMessageBuilder(withBuckets: boolean): NatsDataExtractor {
+  public static defaultDataExtractor(withBuckets: boolean): NatsDataExtractor {
     return (registry: MetricRegistry, metric: Metric, type: MetricType, timestamp: Date, tags: Tags) => {
       let values = null;
 
@@ -243,8 +243,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
     {
       client,
       clock = new StdClock(),
+      dataExtractor = NatsMetricReporter.defaultDataExtractor(true),
       log = console,
-      metricMessageBuilder = NatsMetricReporter.defaultMessageBuilder(true),
       minReportingTimeout = 1,
       reportInterval = 1000,
       subjectDeterminator = NatsMetricReporter.defaultSubjectDeterminator(),
@@ -263,15 +263,15 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
        */
       clock?: Clock;
       /**
+       * Used to build the data for a given metric.
+       * @type {NatsDataExtractor}
+       */
+      dataExtractor?: NatsDataExtractor,
+      /**
        * The logger instance used to report metrics.
        * @type {Logger}
        */
       log?: Logger,
-      /**
-       * Used to build the Nats message for a metric.
-       * @type {NatsDataExtractor}
-       */
-      metricMessageBuilder?: NatsDataExtractor,
       /**
        * The timeout in which a metrics gets reported wether it's value has changed or not.
        * @type {number}
@@ -305,8 +305,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
     }) {
     super({
       clock,
+      dataExtractor,
       log,
-      metricMessageBuilder,
       minReportingTimeout,
       reportInterval,
       scheduler,
@@ -409,7 +409,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
   protected reportMetric(metric: Metric, ctx: MetricSetReportContext<Metric>): NatsReportingResult {
     const tags = this.buildTags(ctx.registry, metric);
     const subject = this.options.subjectDeterminator(ctx.registry, metric, ctx.type, ctx.date, tags);
-    const data = this.options.metricMessageBuilder(ctx.registry, metric, ctx.type, ctx.date, tags);
+    const data = this.options.dataExtractor(ctx.registry, metric, ctx.type, ctx.date, tags);
 
     return { subject, data };
   }
