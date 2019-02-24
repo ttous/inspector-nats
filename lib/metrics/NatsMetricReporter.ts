@@ -1,6 +1,6 @@
 import "source-map-support/register";
 
-import { Exchange, Message, Queue } from "ts-nats";
+import { Client } from "ts-nats";
 
 import {
   Clock,
@@ -26,15 +26,14 @@ import {
   TimeUnit,
 } from "inspector-metrics";
 
-import { NatsMetricReporterOptions } from "./NatsMetricReporterOptions";
-import { NatsReportingResult } from "./NatsReportingResult";
-import { NatsTopologyBuilder } from "./NatsTopologyBuilder";
 import { ICounterValue } from "./ICounterValue";
 import { IGaugeValue } from "./IGaugeValue";
 import { IHistogramValue } from "./IHistogramValue";
 import { IMeterValue } from "./IMeterValue";
 import { ITimerValue } from "./ITimerValue";
 import { MetricMessageBuilder } from "./MetricMessageBuilder";
+import { NatsMetricReporterOptions } from "./NatsMetricReporterOptions";
+import { NatsReportingResult } from "./NatsReportingResult";
 import { RoutingKeyDeterminator } from "./RoutingKeyDeterminator";
 
 export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReporterOptions, NatsReportingResult> {
@@ -62,7 +61,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       } else if (MetricRegistry.isGauge<any>(metric)) {
         values = NatsMetricReporter.getGaugeValue(metric);
       } else {
-        return null;
+        return Promise.resolve(null);
       }
 
       if (!values) {
@@ -72,7 +71,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       const name = metric.getName();
       const group = metric.getGroup();
 
-      return new Message(JSON.stringify({ name, group, timestamp, type, tags, values }));
+      return Promise.resolve({ name, group, timestamp, type, tags, values });
     };
   }
 
@@ -235,14 +234,14 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @type {Nats.Queue | Nats.Exchange}
    * @memberof NatsMetricReporter
    */
-  private target: Queue | Exchange;
+  private client: Client;
 
   /**
    * Creates an instance of NatsMetricReporter.
    */
   public constructor(
     {
-      NatsTopologyBuilder,
+      client,
       clock = new StdClock(),
       log = console,
       metricMessageBuilder = NatsMetricReporter.defaultMessageBuilder(true),
@@ -254,10 +253,10 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       unit = MILLISECOND,
     }: {
       /**
-       * Used to build the underlying Nats topology.
-       * @type {NatsTopologyBuilder}
+       * Underlying NATS client.
+       * @type {Client}
        */
-      NatsTopologyBuilder: NatsTopologyBuilder,
+      client: Client;
       /**
        * The clock instance used determine the current time.
        * @type {Clock}
@@ -316,7 +315,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       unit,
     });
 
-    this.target = NatsTopologyBuilder();
+    this.client = client;
   }
 
   /**
@@ -388,7 +387,9 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
   protected async handleResults(ctx: OverallReportContext, registry: MetricRegistry, date: Date, type: MetricType, results: Array<ReportingResult<any, NatsReportingResult>>): Promise<void> {
     results
       .filter((result) => result.result && result.result.message)
-      .forEach((result) => result.result.message.sendTo(this.target, result.result.routingKey));
+      .forEach((result) => {
+        this.client.publish(result.result.routingKey, result.result.message);
+      });
   }
 
   /**
@@ -426,12 +427,12 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * Calls {@link #reportMetric} with the specified arguments.
    *
    * @protected
-   * @param {Gauge<any>} gauge
-   * @param {ReportingContext<Gauge<any>>} ctx
+   * @param {Gauge<T>} gauge
+   * @param {ReportingContext<Gauge<T>>} ctx
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
-  protected reportGauge(gauge: Gauge<any>, ctx: MetricSetReportContext<Gauge<any>>): NatsReportingResult {
+  protected reportGauge<T>(gauge: Gauge<T>, ctx: MetricSetReportContext<Gauge<T>>): NatsReportingResult {
     return this.reportMetric(gauge, ctx);
   }
 

@@ -1,19 +1,22 @@
 import { Event } from "inspector-metrics";
-import { NatsMetricReporter, NatsTopologyHelper } from "../metrics";
+import { connect } from "ts-nats";
+import { NatsMetricReporter } from "../metrics";
 
-// instance the Nats reporter
-const reporter: NatsMetricReporter = new NatsMetricReporter({
-  NatsTopologyBuilder: NatsTopologyHelper.queue("Nats://localhost", "queue"),
-});
+connect({ servers: ["nats://demo.nats.io:4222", "tls://demo.nats.io:4443"] })
+  .then((client) => {
+    // instanciate the Nats reporter
+    const reporter = new NatsMetricReporter({ client });
 
-// start reporter
-reporter.start().then((r) => {
-  const event = new Event<{}>("test")
-    .setValue({
-      int: 123,
-      string: "toto",
+    // start reporter
+    reporter.start().then((r) => {
+      // create an event
+      const event = new Event<{}>("test")
+        .setValue({
+          int: 123,
+          string: "toto",
+        });
+
+      // report event through the reporter
+      r.reportEvent(event);
     });
-
-  // send event
-  r.reportEvent(event);
-});
+  });
