@@ -31,20 +31,20 @@ import { IGaugeValue } from "./IGaugeValue";
 import { IHistogramValue } from "./IHistogramValue";
 import { IMeterValue } from "./IMeterValue";
 import { ITimerValue } from "./ITimerValue";
-import { MetricMessageBuilder } from "./MetricMessageBuilder";
+import { NatsDataExtractor } from "./NatsDataExtractor";
 import { NatsMetricReporterOptions } from "./NatsMetricReporterOptions";
 import { NatsReportingResult } from "./NatsReportingResult";
-import { RoutingKeyDeterminator } from "./RoutingKeyDeterminator";
+import { NatsSubjectDeterminator } from "./NatsSubjectDeterminator";
 
 export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReporterOptions, NatsReportingResult> {
   /**
    * Returns a {@link MetricMessageBuilder} that builds an Nats.Message for a metric.
    *
    * @static
-   * @returns {MetricMessageBuilder}
+   * @returns {NatsDataExtractor}
    * @memberof NatsMetricReporter
    */
-  public static defaultMessageBuilder(withBuckets: boolean): MetricMessageBuilder {
+  public static defaultMessageBuilder(withBuckets: boolean): NatsDataExtractor {
     return (registry: MetricRegistry, metric: Metric, type: MetricType, timestamp: Date, tags: Tags) => {
       let values = null;
 
@@ -79,11 +79,11 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * Returns a {@link RoutingKeyDeterminator} that determines the routing key for a given metric.
    *
    * @static
-   * @returns {RoutingKeyDeterminator}
+   * @returns {NatsSubjectDeterminator}
    * @memberof NatsMetricReporter
    */
-  public static defaultRoutingKeyDeterminator(): RoutingKeyDeterminator {
-    return (registry: MetricRegistry, metric: Metric, type: MetricType, timestamp: Date, tags: Tags) => undefined;
+  public static defaultSubjectDeterminator(): NatsSubjectDeterminator {
+    return async (registry: MetricRegistry, metric: Metric, type: MetricType, timestamp: Date, tags: Tags) => "inspector-nats";
   }
 
   /**
@@ -247,7 +247,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       metricMessageBuilder = NatsMetricReporter.defaultMessageBuilder(true),
       minReportingTimeout = 1,
       reportInterval = 1000,
-      routingKeyDeterminator = NatsMetricReporter.defaultRoutingKeyDeterminator(),
+      subjectDeterminator = NatsMetricReporter.defaultSubjectDeterminator(),
       scheduler = setInterval,
       tags = new Map(),
       unit = MILLISECOND,
@@ -269,9 +269,9 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       log?: Logger,
       /**
        * Used to build the Nats message for a metric.
-       * @type {MetricMessageBuilder}
+       * @type {NatsDataExtractor}
        */
-      metricMessageBuilder?: MetricMessageBuilder,
+      metricMessageBuilder?: NatsDataExtractor,
       /**
        * The timeout in which a metrics gets reported wether it's value has changed or not.
        * @type {number}
@@ -283,15 +283,15 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
        */
       reportInterval?: number;
       /**
-       * Used to determine the routing key for a given metric.
-       * @type {RoutingKeyDeterminator}
-       */
-      routingKeyDeterminator?: RoutingKeyDeterminator,
-      /**
        * The scheduler function used to trigger reporting.
        * @type {Scheduler}
        */
       scheduler?: Scheduler;
+      /**
+       * Used to determine the subject for a given metric.
+       * @type {NatsSubjectDeterminator}
+       */
+      subjectDeterminator?: NatsSubjectDeterminator,
       /**
        * Common tags for this reporter instance.
        * @type {Map<string, string>}
@@ -309,8 +309,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       metricMessageBuilder,
       minReportingTimeout,
       reportInterval,
-      routingKeyDeterminator,
       scheduler,
+      subjectDeterminator,
       tags,
       unit,
     });
@@ -384,12 +384,16 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @returns {Promise<void>}
    * @memberof NatsMetricReporter
    */
-  protected async handleResults(ctx: OverallReportContext, registry: MetricRegistry, date: Date, type: MetricType, results: Array<ReportingResult<any, NatsReportingResult>>): Promise<void> {
-    results
-      .filter((result) => result.result && result.result.message)
-      .forEach((result) => {
-        this.client.publish(result.result.routingKey, result.result.message);
-      });
+  protected handleResults(ctx: OverallReportContext, registry: MetricRegistry, date: Date, type: MetricType, results: Array<ReportingResult<any, NatsReportingResult>>): Promise<void> {
+    return Promise.all(
+      results
+        .map((result) => {
+          return Promise.all([result.result.data, result.result.subject])
+            .then((message) => {
+              this.client.publish(message[1], message[0]);
+            });
+        }))
+      .then(() => { });
   }
 
   /**
@@ -404,10 +408,10 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    */
   protected reportMetric(metric: Metric, ctx: MetricSetReportContext<Metric>): NatsReportingResult {
     const tags = this.buildTags(ctx.registry, metric);
-    const message = this.options.metricMessageBuilder(ctx.registry, metric, ctx.type, ctx.date, tags);
-    const routingKey = this.options.routingKeyDeterminator(ctx.registry, metric, ctx.type, ctx.date, tags);
+    const subject = this.options.subjectDeterminator(ctx.registry, metric, ctx.type, ctx.date, tags);
+    const data = this.options.metricMessageBuilder(ctx.registry, metric, ctx.type, ctx.date, tags);
 
-    return { message, routingKey };
+    return { subject, data };
   }
 
   /**

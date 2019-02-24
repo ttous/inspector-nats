@@ -2,8 +2,8 @@ import "source-map-support/register";
 
 import { Logger, ScheduledMetricReporterOptions } from "inspector-metrics";
 
-import { MetricMessageBuilder } from "./MetricMessageBuilder";
-import { RoutingKeyDeterminator } from "./RoutingKeyDeterminator";
+import { NatsDataExtractor } from "./NatsDataExtractor";
+import { NatsSubjectDeterminator } from "./NatsSubjectDeterminator";
 
 /**
  * Options for {@link NatsMetricReporter}.
@@ -23,13 +23,13 @@ export interface NatsMetricReporterOptions extends ScheduledMetricReporterOption
 
   /**
    * Used to build the Nats message for a metric.
-   * @type {MetricMessageBuilder}
+   * @type {NatsDataExtractor}
    */
-  metricMessageBuilder: MetricMessageBuilder;
+  metricMessageBuilder: NatsDataExtractor;
 
   /**
-   * Used to determine the routing key for a given metric.
-   * @type {RoutingKeyDeterminator}
+   * Used to determine the subject for a given metric.
+   * @type {NatsSubjectDeterminator}
    */
-  routingKeyDeterminator: RoutingKeyDeterminator;
+  subjectDeterminator: NatsSubjectDeterminator;
 }

@@ -12,4 +12,4 @@ import {
 /**
  * Interface for building a message for a metric.
  */
-export type MetricMessageBuilder = (registry: MetricRegistry, metric: Metric, type: MetricType, date: Date, tags: Tags) => Promise<any | null>;
+export type NatsDataExtractor = (registry: MetricRegistry, metric: Metric, type: MetricType, date: Date, tags: Tags) => Promise<any | undefined>;
