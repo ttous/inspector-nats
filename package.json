@@ -27,7 +27,6 @@
     "metrics"
   ],
   "dependencies": {
-    "amqp-ts": "^1.4.0",
     "inspector-metrics": "^1.17.3",
     "nats": "^1.2.2",
     "node-nats-streaming": "0.0.52",

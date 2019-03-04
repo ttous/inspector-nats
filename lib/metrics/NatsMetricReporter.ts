@@ -265,7 +265,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
        */
       log?: Logger,
       /**
-       * Used to build the amqp message for a metric.
+       * Used to build the nats message for a metric.
        * @type {MetricMessageBuilder}
        */
       metricMessageBuilder?: MetricMessageBuilder,
@@ -331,7 +331,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
   }
 
   /**
-   * Does nothing
+   * Does nothing.
    *
    * @returns {Promise<void>}
    * @memberof NatsMetricReporter
@@ -402,7 +402,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
   }
 
   /**
-   * Log the reported event at the debug level.
+   * Does nothing.
    *
    * @protected
    * @param {MetricRegistry} registry
@@ -419,13 +419,6 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
     type: MetricType,
     results: Array<ReportingResult<any, string>>,
   ): Promise<void> {
-    results
-      .forEach((result) => this.options.log.debug({
-        date,
-        metric: result.metric,
-        result: result.result,
-        type,
-      }));
   }
 
   /**
@@ -440,9 +433,10 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @memberof NatsMetricReporter
    */
   protected reportMetric(metric: Metric, ctx: MetricSetReportContext<Metric>, subject?: string, callback?: NATS.AckHandlerCallback): string {
+    subject = subject || "DEFAULT_NATS_SUBJECT";
     const tags = this.buildTags(ctx.registry, metric);
     const message = this.options.metricMessageBuilder(ctx.registry, metric, ctx.type, ctx.date, tags);
-    return this.client.publish(subject, JSON.stringify(message), callback);
+    return this.client.publish(subject, message, callback);
   }
 
   /**

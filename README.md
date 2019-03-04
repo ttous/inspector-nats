@@ -1,6 +1,6 @@
 # inspector-nats
 
-Typescript [Metrics Reporter](https://github.com/rstiller/inspector-metrics/blob/master/lib/metrics/reporter/metric-reporter.ts) for [AMQP](https://www.nats.org/).
+Typescript [Metrics Reporter](https://github.com/rstiller/inspector-metrics/blob/master/lib/metrics/reporter/metric-reporter.ts) for [NATS](https://nats.io/).
 
 <p align="center">
     <a href="https://www.npmjs.org/package/inspector-nats">
@@ -27,6 +27,7 @@ It uses [node-nats-streaming](https://github.com/nats-io/node-nats-streaming) as
 
 ## Basic usage
 
+If no `subject` is given as parameter for the `reportX` methods (`reportEvent` in the following example), it will default to `"DEFAULT_NATS_SUBJECT"`
 ```typescript
 import { Event } from "inspector-metrics";
 import { NatsMetricReporter } from "../metrics";
@@ -47,7 +48,7 @@ reporter.start()
       });
 
     // send event
-    reporter.reportEvent(event).catch((reason) => {
+    reporter.reportEvent(event).catch((reason) => { // 'subject' will default to "DEFAULT_NATS_SUBJECT"
       console.error("Could report the event via NATS reporter.", reason);
     });
 
@@ -62,6 +63,7 @@ reporter.start()
 ```
 
 ## Running NATS Streaming Server locally
+
 Refer to the [Official NATS Streaming Server documentation](https://nats.io/documentation/streaming/nats-streaming-intro/) (you can also directly go to the [installing part](https://nats.io/documentation/streaming/nats-streaming-install/)).
 
 ## Releasing / publish docs / publish package
