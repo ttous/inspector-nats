@@ -32,8 +32,9 @@ import { IMeterValue } from "./IMeterValue";
 import { ITimerValue } from "./ITimerValue";
 import { MetricMessageBuilder } from "./MetricMessageBuilder";
 import { NatsMetricReporterOptions } from "./NatsMetricReporterOptions";
+import { NatsReportingResult } from "./NatsReportingResult";
 
-export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReporterOptions, string> {
+export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReporterOptions, NatsReportingResult> {
   /**
    * Returns a {@link MetricMessageBuilder} that builds a string for a metric.
    *
@@ -371,7 +372,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @returns {Promise<TEvent>}
    * @memberof NatsMetricReporter
    */
-  public async reportEvent<TEventData, TEvent extends Event<TEventData>>(event: TEvent, subject?: string, callback?: NATS.AckHandlerCallback): Promise<TEvent> {
+  public async reportEvent<TEventData, TEvent extends Event<TEventData>>(event: TEvent, subject?: string): Promise<TEvent> {
     const result = this.reportGauge(
       event,
       {
@@ -382,7 +383,6 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
         type: "gauge",
       },
       subject,
-      callback,
     );
 
     if (result) {
@@ -402,13 +402,13 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
   }
 
   /**
-   * Does nothing.
+   * Send the messages to the Nats server.
    *
    * @protected
    * @param {MetricRegistry} registry
    * @param {Date} date
    * @param {MetricType} type
-   * @param {Array<ReportingResult<any, any[]>>} results
+   * @param {Array<ReportingResult<any, NatsReportingResult>>} results
    * @returns {Promise<void>}
    * @memberof NatsMetricReporter
    */
@@ -417,8 +417,22 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
     registry: MetricRegistry,
     date: Date,
     type: MetricType,
-    results: Array<ReportingResult<any, string>>,
+    results: Array<ReportingResult<any, NatsReportingResult>>,
   ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Create a Promise for each result publication
+      const promises: Array<PromiseLike<void>> = results.map((result) => {
+        return new Promise((resolve, reject) => {
+          this.client.publish(result.result.subject, result.result.message, (err, guid) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      });
+
+      // Once they are all resolved, return the resolution
+      Promise.all(promises).then(() => resolve());
+    });
   }
 
   /**
@@ -432,11 +446,11 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
-  protected reportMetric(metric: Metric, ctx: MetricSetReportContext<Metric>, subject?: string, callback?: NATS.AckHandlerCallback): string {
+  protected reportMetric(metric: Metric, ctx: MetricSetReportContext<Metric>, subject?: string): NatsReportingResult {
     subject = subject || "DEFAULT_NATS_SUBJECT";
     const tags = this.buildTags(ctx.registry, metric);
     const message = this.options.metricMessageBuilder(ctx.registry, metric, ctx.type, ctx.date, tags);
-    return this.client.publish(subject, message, callback);
+    return { subject, message };
   }
 
   /**
@@ -450,8 +464,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
-  protected reportCounter(counter: MonotoneCounter | Counter, ctx: MetricSetReportContext<MonotoneCounter | Counter>, subject?: string, callback?: NATS.AckHandlerCallback): string {
-    return this.reportMetric(counter, ctx, subject, callback);
+  protected reportCounter(counter: MonotoneCounter | Counter, ctx: MetricSetReportContext<MonotoneCounter | Counter>, subject?: string): NatsReportingResult {
+    return this.reportMetric(counter, ctx, subject);
   }
 
   /**
@@ -465,8 +479,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
-  protected reportGauge(gauge: Gauge<any>, ctx: MetricSetReportContext<Gauge<any>>, subject?: string, callback?: NATS.AckHandlerCallback): string {
-    return this.reportMetric(gauge, ctx, subject, callback);
+  protected reportGauge(gauge: Gauge<any>, ctx: MetricSetReportContext<Gauge<any>>, subject?: string): NatsReportingResult {
+    return this.reportMetric(gauge, ctx, subject);
   }
 
   /**
@@ -480,8 +494,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
-  protected reportHistogram(histogram: Histogram, ctx: MetricSetReportContext<Histogram>, subject?: string, callback?: NATS.AckHandlerCallback): string {
-    return this.reportMetric(histogram, ctx, subject, callback);
+  protected reportHistogram(histogram: Histogram, ctx: MetricSetReportContext<Histogram>, subject?: string): NatsReportingResult {
+    return this.reportMetric(histogram, ctx, subject);
   }
 
   /**
@@ -495,8 +509,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
-  protected reportMeter(meter: Meter, ctx: MetricSetReportContext<Meter>, subject?: string, callback?: NATS.AckHandlerCallback): string {
-    return this.reportMetric(meter, ctx, subject, callback);
+  protected reportMeter(meter: Meter, ctx: MetricSetReportContext<Meter>, subject?: string): NatsReportingResult {
+    return this.reportMetric(meter, ctx, subject);
   }
 
   /**
@@ -510,7 +524,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
-  protected reportTimer(timer: Timer, ctx: MetricSetReportContext<Timer>, subject?: string, callback?: NATS.AckHandlerCallback): string {
-    return this.reportMetric(timer, ctx, subject, callback);
+  protected reportTimer(timer: Timer, ctx: MetricSetReportContext<Timer>, subject?: string): NatsReportingResult {
+    return this.reportMetric(timer, ctx, subject);
   }
 }

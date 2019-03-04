@@ -17,9 +17,13 @@ reporter.start()
       });
 
     // send event
-    connectedReporter.reportEvent(event).catch((reason) => {
-      // report error handling
-    });
+    connectedReporter.reportEvent(event)
+      .then((event) => {
+        console.warn(event)
+      })
+      .catch((reason) => {
+        // report error handling
+      });
 
     // stop reporter
     connectedReporter.stop().catch((reason) => {
