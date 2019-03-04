@@ -366,6 +366,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * Reports an {@link Event}.
    *
    * @param {Event} event
+   * @param {string} subject
+   * @param {NATS.AckHandlerCallback} callback
    * @returns {Promise<TEvent>}
    * @memberof NatsMetricReporter
    */
@@ -432,6 +434,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @protected
    * @param {Metric} metric
    * @param {ReportingContext<Metric>} ctx
+   * @param {string} subject
+   * @param {NATS.AckHandlerCallback} callback
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
@@ -447,6 +451,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @protected
    * @param {(MonotoneCounter | Counter)} counter
    * @param {(ReportingContext<MonotoneCounter | Counter>)} ctx
+   * @param {string} subject
+   * @param {NATS.AckHandlerCallback} callback
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
@@ -460,6 +466,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @protected
    * @param {Gauge<any>} gauge
    * @param {ReportingContext<Gauge<any>>} ctx
+   * @param {string} subject
+   * @param {NATS.AckHandlerCallback} callback
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
@@ -473,6 +481,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @protected
    * @param {Histogram} histogram
    * @param {ReportingContext<Histogram>} ctx
+   * @param {string} subject
+   * @param {NATS.AckHandlerCallback} callback
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
@@ -486,6 +496,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @protected
    * @param {Meter} meter
    * @param {ReportingContext<Meter>} ctx
+   * @param {string} subject
+   * @param {NATS.AckHandlerCallback} callback
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
@@ -499,6 +511,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @protected
    * @param {Timer} timer
    * @param {ReportingContext<Timer>} ctx
+   * @param {string} subject
+   * @param {NATS.AckHandlerCallback} callback
    * @returns {{}}
    * @memberof NatsMetricReporter
    */
