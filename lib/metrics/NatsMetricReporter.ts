@@ -25,13 +25,13 @@ import {
 } from "inspector-metrics";
 
 import * as NATS from "node-nats-streaming";
-import { NatsMetricReporterOptions } from "./NatsMetricReporterOptions";
 import { ICounterValue } from "./ICounterValue";
 import { IGaugeValue } from "./IGaugeValue";
 import { IHistogramValue } from "./IHistogramValue";
 import { IMeterValue } from "./IMeterValue";
 import { ITimerValue } from "./ITimerValue";
 import { MetricMessageBuilder } from "./MetricMessageBuilder";
+import { NatsMetricReporterOptions } from "./NatsMetricReporterOptions";
 
 export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReporterOptions, string> {
   /**
@@ -296,10 +296,10 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       unit?: TimeUnit;
     }) {
     super({
-      clusterId,
       clientId,
       clientOptions,
       clock,
+      clusterId,
       log,
       metricMessageBuilder,
       minReportingTimeout,
@@ -363,6 +363,43 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
   }
 
   /**
+   * Reports an {@link Event}.
+   *
+   * @param {Event} event
+   * @returns {Promise<TEvent>}
+   * @memberof NatsMetricReporter
+   */
+  public async reportEvent<TEventData, TEvent extends Event<TEventData>>(event: TEvent, subject?: string, callback?: NATS.AckHandlerCallback): Promise<TEvent> {
+    const result = this.reportGauge(
+      event,
+      {
+        date: event.getTime(),
+        metrics: [],
+        overallCtx: null,
+        registry: null,
+        type: "gauge",
+      },
+      subject,
+      callback,
+    );
+
+    if (result) {
+      await this.handleResults(
+        null,
+        null,
+        event.getTime(),
+        "gauge",
+        [{
+          metric: event,
+          result,
+        }],
+      );
+    }
+
+    return event;
+  }
+
+  /**
    * Log the reported event at the debug level.
    *
    * @protected
@@ -378,14 +415,14 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
     registry: MetricRegistry,
     date: Date,
     type: MetricType,
-    results: Array<ReportingResult<any, string>>
+    results: Array<ReportingResult<any, string>>,
   ): Promise<void> {
     results
       .forEach((result) => this.options.log.debug({
-        type,
         date,
         metric: result.metric,
-        result: result.result
+        result: result.result,
+        type,
       }));
   }
 
@@ -428,43 +465,6 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    */
   protected reportGauge(gauge: Gauge<any>, ctx: MetricSetReportContext<Gauge<any>>, subject?: string, callback?: NATS.AckHandlerCallback): string {
     return this.reportMetric(gauge, ctx, subject, callback);
-  }
-
-  /**
-   * Reports an {@link Event}.
-   *
-   * @param {Event} event
-   * @returns {Promise<TEvent>}
-   * @memberof NatsMetricReporter
-   */
-  public async reportEvent<TEventData, TEvent extends Event<TEventData>>(event: TEvent, subject?: string, callback?: NATS.AckHandlerCallback): Promise<TEvent> {
-    const result = this.reportGauge(
-      event,
-      {
-        date: event.getTime(),
-        metrics: [],
-        overallCtx: null,
-        registry: null,
-        type: "gauge"
-      },
-      subject,
-      callback
-    );
-
-    if (result) {
-      await this.handleResults(
-        null,
-        null,
-        event.getTime(),
-        "gauge",
-        [{
-          metric: event,
-          result,
-        }]
-      );
-    }
-
-    return event;
   }
 
   /**

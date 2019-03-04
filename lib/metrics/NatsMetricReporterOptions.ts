@@ -1,8 +1,8 @@
 import "source-map-support/register";
 
 import { Logger, ScheduledMetricReporterOptions } from "inspector-metrics";
-
 import { MetricMessageBuilder } from "./MetricMessageBuilder";
+
 import { StanOptions } from "node-nats-streaming";
 
 /**
@@ -48,5 +48,3 @@ export interface NatsMetricReporterOptions extends ScheduledMetricReporterOption
    */
   metricMessageBuilder: MetricMessageBuilder;
 }
-
-

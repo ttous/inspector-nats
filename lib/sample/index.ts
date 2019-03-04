@@ -3,13 +3,13 @@ import { NatsMetricReporter } from "../metrics";
 
 // instanciate the Nats reporter
 const reporter: NatsMetricReporter = new NatsMetricReporter({
+  clientId: "test",
   clusterId: "test-cluster",
-  clientId: "test"
 });
 
 // start reporter
 reporter.start()
-  .then((reporter) => { // "start()" returns the same reporter instance, after the connection was made
+  .then((connectedReporter) => { // "start()" returns the same reporter instance, after the connection was made
     const event = new Event<{}>("test")
       .setValue({
         int: 123,
@@ -17,15 +17,15 @@ reporter.start()
       });
 
     // send event
-    reporter.reportEvent(event).catch((reason) => {
-      console.error("Could report the event via NATS reporter.", reason);
+    connectedReporter.reportEvent(event).catch((reason) => {
+      // report error handling
     });
 
     // stop reporter
-    reporter.stop().catch((reason) => {
-      console.error("Could not stop the NATS reporter.", reason);
+    connectedReporter.stop().catch((reason) => {
+      // stop connection error handling
     });
   })
   .catch((reason) => {
-    console.error("Could not start the NATS reporter.", reason);
+    // start connection error handling
   });
