@@ -1,7 +1,7 @@
 {
-  "name": "inspector-amqp",
-  "version": "0.0.3",
-  "description": "Amqp metric reporter for nodejs",
+  "name": "inspector-nats",
+  "version": "0.0.1",
+  "description": "NATS metric reporter for nodejs",
   "main": "./build/lib/metrics/index.js",
   "typings": "./build/lib/metrics/index.d.ts",
   "scripts": {
@@ -19,11 +19,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ttous/inspector-amqp.git"
+    "url": "git+https://github.com/ttous/inspector-nats.git"
   },
   "keywords": [
     "inspector",
-    "amqp",
+    "nats",
     "metrics"
   ],
   "dependencies": {
@@ -55,10 +55,10 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ttous/inspector-amqp/issues"
+    "url": "https://github.com/ttous/inspector-nats/issues"
   },
   "files": [
     "build"
   ],
-  "homepage": "https://ttous.github.io/inspector-amqp/"
+  "homepage": "https://ttous.github.io/inspector-nats/"
 }

@@ -1,13 +1,10 @@
 import { Event } from "inspector-metrics";
 import { NatsMetricReporter } from "../metrics";
 
-// instance the Nats reporter
+// instanciate the Nats reporter
 const reporter: NatsMetricReporter = new NatsMetricReporter({
   clusterId: "test-cluster",
-  clientId: "test",
-  // clientOptions: {
-  //   url: "localhost:4222"
-  // }
+  clientId: "test"
 });
 
 // start reporter
