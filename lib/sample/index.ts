@@ -5,19 +5,26 @@ import { NatsMetricReporter } from "../metrics";
 const reporter: NatsMetricReporter = new NatsMetricReporter({
   clusterId: "test-cluster",
   clientId: "test",
-  clientOptions: {
-    url: "localhost:4222"
-  }
+  // clientOptions: {
+  //   url: "localhost:4222"
+  // }
 });
 
 // start reporter
-reporter.start().then((r) => {
-  const event = new Event<{}>("test")
-    .setValue({
-      int: 123,
-      string: "toto",
-    });
+reporter.start()
+  .then((readyReporter) => {
+    const event = new Event<{}>("test")
+      .setValue({
+        int: 123,
+        string: "toto",
+      });
 
-  // send event
-  r.reportEvent(event);
-});
+    // send event
+    readyReporter.reportEvent(event).catch((reason) => {
+      console.error("Could report the event via NATS reporter.", reason);
+    });
+  })
+  .catch((reason) => {
+    console.error("Could not start the NATS reporter.", reason);
+  });
+

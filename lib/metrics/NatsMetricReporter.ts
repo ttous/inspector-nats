@@ -32,7 +32,6 @@ import { IHistogramValue } from "./IHistogramValue";
 import { IMeterValue } from "./IMeterValue";
 import { ITimerValue } from "./ITimerValue";
 import { MetricMessageBuilder } from "./MetricMessageBuilder";
-import { RoutingKeyDeterminator } from "./RoutingKeyDeterminator";
 
 export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReporterOptions, string> {
   /**
@@ -71,17 +70,6 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
 
       return JSON.stringify({ name, group, timestamp, type, tags, values });
     };
-  }
-
-  /**
-   * Returns a {@link RoutingKeyDeterminator} that determines the routing key for a given metric.
-   *
-   * @static
-   * @returns {RoutingKeyDeterminator}
-   * @memberof NatsMetricReporter
-   */
-  public static defaultRoutingKeyDeterminator(): RoutingKeyDeterminator {
-    return (registry: MetricRegistry, metric: Metric, type: MetricType, timestamp: Date, tags: Tags) => undefined;
   }
 
   /**
@@ -241,13 +229,12 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
     {
       clusterId,
       clientId,
-      clientOptions,
+      clientOptions = {},
       clock = new StdClock(),
       log = console,
       metricMessageBuilder = NatsMetricReporter.defaultMessageBuilder(true),
       minReportingTimeout = 1,
       reportInterval = 1000,
-      routingKeyDeterminator = NatsMetricReporter.defaultRoutingKeyDeterminator(),
       scheduler = setInterval,
       tags = new Map(),
       unit = MILLISECOND,
@@ -266,7 +253,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
        * Used to build the nats client.
        * @type {NATS.StanOptions}
        */
-      clientOptions: NATS.StanOptions,
+      clientOptions?: NATS.StanOptions,
       /**
        * The clock instance used determine the current time.
        * @type {Clock}
@@ -292,11 +279,6 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
        * @type {number}
        */
       reportInterval?: number;
-      /**
-       * Used to determine the routing key for a given metric.
-       * @type {RoutingKeyDeterminator}
-       */
-      routingKeyDeterminator?: RoutingKeyDeterminator,
       /**
        * The scheduler function used to trigger reporting.
        * @type {Scheduler}
@@ -363,7 +345,17 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @memberof NatsMetricReporter
    */
   public async start(): Promise<this> {
-    this.client = await NATS.connect(this.options.clusterId, this.options.clientId, this.options.clientOptions);
+    this.client = NATS.connect(this.options.clusterId, this.options.clientId, this.options.clientOptions);
+    return this;
+  }
+
+  /**
+   * Stops the client.
+   *
+   * @memberof NatsMetricReporter
+   */
+  public async stop(): Promise<this> {
+    this.client.close();
     return this;
   }
 
@@ -389,6 +381,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       .forEach((result) => this.options.log.debug({
         type,
         date,
+        metric: result.metric,
         result: result.result
       }));
   }

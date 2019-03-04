@@ -3,7 +3,7 @@ import "source-map-support/register";
 import { Logger, ScheduledMetricReporterOptions } from "inspector-metrics";
 
 import { MetricMessageBuilder } from "./MetricMessageBuilder";
-import { ClientOpts } from "nats";
+import { StanOptions } from "node-nats-streaming";
 
 /**
  * Options for {@link NatsMetricReporter}.
@@ -30,10 +30,10 @@ export interface NatsMetricReporterOptions extends ScheduledMetricReporterOption
   /**
    * Nats client options.
    *
-   * @type {ClientOpts}
+   * @type {StanOptions}
    * @memberof ElasticsearchMetricReporterOption
    */
-  readonly clientOptions: ClientOpts;
+  readonly clientOptions: StanOptions;
   /**
    * Logger instance used to report errors.
    *
