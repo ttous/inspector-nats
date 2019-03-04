@@ -1,0 +1,64 @@
+{
+  "name": "inspector-amqp",
+  "version": "0.0.3",
+  "description": "Amqp metric reporter for nodejs",
+  "main": "./build/lib/metrics/index.js",
+  "typings": "./build/lib/metrics/index.d.ts",
+  "scripts": {
+    "build": "npm run clean && npm run lint && npm run compile && npm run compodoc",
+    "clean": "rimraf build coverage docs",
+    "compile": "tsc -p .",
+    "compodoc": "compodoc lib -p tsconfig.json --output docs --disableGraph --unitTestCoverage ./coverage/coverage-summary.json",
+    "deps": "npm-check --ignore @types/* --no-spinner --no-emoji --no-color",
+    "lint": "tslint -c tslint.json lib/**/*.ts test/**/*.ts",
+    "publishDocs": "cd docs && git add --all . && git commit -m 'Deploy to gh-pages' && git push origin gh-pages && cd ..",
+    "prepublishDocs": "npm run compodoc",
+    "prepublishOnly": "npm run build",
+    "sample": "ts-node lib/sample/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ttous/inspector-amqp.git"
+  },
+  "keywords": [
+    "inspector",
+    "amqp",
+    "metrics"
+  ],
+  "dependencies": {
+    "amqp-ts": "^1.4.0",
+    "inspector-metrics": "^1.17.3",
+    "nats": "^1.2.2",
+    "node-nats-streaming": "0.0.52",
+    "source-map-support": "^0.5.10"
+  },
+  "devDependencies": {
+    "@compodoc/compodoc": "^1.1.8",
+    "@types/bluebird": "^3.5.25",
+    "@types/node": "^11.9.3",
+    "compodoc": "0.0.41",
+    "npm-check": "^5.9.0",
+    "rimraf": "^2.6.3",
+    "ts-node": "^8.0.2",
+    "tslint": "^5.12.1",
+    "typescript": "^3.3.3"
+  },
+  "peerDependencies": {
+    "inspector-metrics": ">=1.16.x"
+  },
+  "author": "ttous",
+  "contributors": [
+    "ttous",
+    "doubret",
+    "rstiller"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ttous/inspector-amqp/issues"
+  },
+  "files": [
+    "build"
+  ],
+  "homepage": "https://ttous.github.io/inspector-amqp/"
+}
