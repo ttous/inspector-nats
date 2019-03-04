@@ -346,7 +346,10 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    */
   public async start(): Promise<this> {
     this.client = NATS.connect(this.options.clusterId, this.options.clientId, this.options.clientOptions);
-    return this;
+    return new Promise((resolve, reject) => {
+      this.client.on("connect", () => resolve(this));
+      this.client.on("error", (reason) => reject(reason));
+    });
   }
 
   /**
@@ -355,7 +358,7 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
    * @memberof NatsMetricReporter
    */
   public async stop(): Promise<this> {
-    this.client.close();
+    await this.client.close();
     return this;
   }
 
