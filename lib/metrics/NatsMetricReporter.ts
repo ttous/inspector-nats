@@ -431,7 +431,9 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
       });
 
       // Once they are all resolved, return the resolution
-      Promise.all(promises).then(() => resolve());
+      Promise.all(promises)
+        .then(() => resolve())
+        .catch((reason) => reject(reason));
     });
   }
 

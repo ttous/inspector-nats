@@ -19,16 +19,17 @@ reporter.start()
     // send event
     connectedReporter.reportEvent(event)
       .then((event) => {
-        console.warn(event)
+        
+        // perhaps do more things here
+
+        // stop reporter
+        connectedReporter.stop().catch((reason) => {
+          // stop connection error handling
+        });
       })
       .catch((reason) => {
         // report error handling
       });
-
-    // stop reporter
-    connectedReporter.stop().catch((reason) => {
-      // stop connection error handling
-    });
   })
   .catch((reason) => {
     // start connection error handling
