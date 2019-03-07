@@ -18,8 +18,8 @@ reporter.start()
 
     // send event
     connectedReporter.reportEvent(event)
-      .then((event) => {
-        
+      .then((returnedEvent) => {
+
         // perhaps do more things here
 
         // stop reporter

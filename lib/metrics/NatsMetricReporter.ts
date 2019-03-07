@@ -422,11 +422,8 @@ export class NatsMetricReporter extends ScheduledMetricReporter<NatsMetricReport
     return new Promise((resolve, reject) => {
       // Create a Promise for each result publication
       const promises: Array<PromiseLike<void>> = results.map((result) => {
-        return new Promise((resolve, reject) => {
-          this.client.publish(result.result.subject, result.result.message, (err, guid) => {
-            if (err) reject(err);
-            else resolve();
-          });
+        return new Promise((resolveI, rejectI) => {
+          this.client.publish(result.result.subject, result.result.message, (err, guid) => err ? rejectI(err) : resolveI());
         });
       });
 
