@@ -1,6 +1,6 @@
 {
   "name": "inspector-nats",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "NATS metric reporter for nodejs",
   "main": "./build/lib/metrics/index.js",
   "typings": "./build/lib/metrics/index.d.ts",
